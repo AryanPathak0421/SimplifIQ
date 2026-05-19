@@ -1,0 +1,6 @@
+.env
+credentials.json
+storage/leads.json
+public/reports/
+test_gmail.js
+node_modules
