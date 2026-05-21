@@ -4,6 +4,7 @@ import path from 'path';
 
 export class DriveService {
   static async uploadPDF(filePath, companyName) {
+    const driveEnabled = (process.env.DRIVE_ARCHIVE_ENABLED || 'false').toLowerCase() === 'true';
     const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
     const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
@@ -11,6 +12,11 @@ export class DriveService {
     
     // Default local fallback URL
     const localUrl = `/reports/${fileName}`;
+
+    if (!driveEnabled) {
+      console.log('Google Drive archiving disabled via DRIVE_ARCHIVE_ENABLED=false. Serving report statically.');
+      return localUrl;
+    }
 
     if (folderId && (credentialsJson || credentialsPath)) {
       try {

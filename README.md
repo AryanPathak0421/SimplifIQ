@@ -29,12 +29,14 @@ Important environment variables (see `backend/.env.example`):
 - `GOOGLE_DRIVE_FOLDER_ID` (optional) — Drive folder id for archived PDFs.
 - `GOOGLE_SPREADSHEET_ID` (optional) — Spreadsheet ID to append leads.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (optional) — SMTP server credentials. If not provided, the system uses Ethereal test inbox.
+- `DRIVE_ARCHIVE_ENABLED` — set to `true` only if your Google Drive target is a Shared Drive or delegated user account. Leave `false` to avoid service-account quota errors and keep the local PDF fallback.
 
 Deployment note:
 - For cloud deployment, prefer `GOOGLE_APPLICATION_CREDENTIALS_JSON` over a local file path.
 - If your host supports mounted files, you can use `GOOGLE_APPLICATION_CREDENTIALS` instead.
 - Keep the service-account JSON on a single line when storing it as an environment variable.
 - The backend also accepts a JSON blob directly in `GOOGLE_APPLICATION_CREDENTIALS` if you cannot use a mounted file.
+- Keep `DRIVE_ARCHIVE_ENABLED=false` unless you have confirmed Shared Drive access for the service account.
 
 Gemini notes:
 - The backend uses the official Google AI SDK, so you usually only need `GEMINI_API_KEY` in `.env`.
