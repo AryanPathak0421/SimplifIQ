@@ -6,6 +6,8 @@ import ReportDashboard from './components/ReportDashboard';
 import AdminLeads from './components/AdminLeads';
 import Footer from './components/Footer';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+
 export default function App() {
   const [view, setView] = useState('form'); // 'form' | 'loading' | 'results' | 'admin'
   const [formData, setFormData] = useState(null);
@@ -41,7 +43,7 @@ export default function App() {
 
     try {
       console.log('Posting lead data to workflow pipeline endpoint...');
-      const response = await fetch('http://localhost:5000/api/leads', {
+      const response = await fetch(`${API_BASE_URL}/api/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
