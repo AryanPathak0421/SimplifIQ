@@ -5,6 +5,29 @@ import path from 'path';
 const localLeadsPath = path.resolve('storage/leads.json');
 
 export class SheetsService {
+  static getGoogleAuthConfig() {
+    const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+
+    const inlineCredentials = credentialsJson || (credentialsPath && credentialsPath.trim().startsWith('{') ? credentialsPath : null);
+
+    if (inlineCredentials) {
+      return {
+        credentials: JSON.parse(inlineCredentials),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      };
+    }
+
+    if (credentialsPath && fs.existsSync(credentialsPath)) {
+      return {
+        keyFile: credentialsPath,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      };
+    }
+
+    return null;
+  }
+
   static ensureLocalStorage() {
     const dir = path.dirname(localLeadsPath);
     if (!fs.existsSync(dir)) {
@@ -18,22 +41,23 @@ export class SheetsService {
   static async logLead(leadData, scrapedData, pdfUrl, status = 'Success') {
     // 1. Save to local storage first (ensures we always have local DB for admin dashboard)
     this.ensureLocalStorage();
+    // Create the lead object up-front so we can always return it even if downstream sync fails
+    const newLead = {
+      id: 'LID_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+      name: leadData.name,
+      email: leadData.email,
+      companyName: leadData.companyName || scrapedData.domain,
+      website: scrapedData.url,
+      challenge: leadData.challenge || 'Digital Strategy',
+      scores: scrapedData.scores,
+      pdfUrl,
+      status,
+      timestamp: new Date().toISOString()
+    };
+
     try {
       const data = fs.readFileSync(localLeadsPath, 'utf8');
       const leads = JSON.parse(data);
-      
-      const newLead = {
-        id: 'LID_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-        name: leadData.name,
-        email: leadData.email,
-        companyName: leadData.companyName || scrapedData.domain,
-        website: scrapedData.url,
-        challenge: leadData.challenge || 'Digital Strategy',
-        scores: scrapedData.scores,
-        pdfUrl,
-        status,
-        timestamp: new Date().toISOString()
-      };
 
       leads.unshift(newLead); // Add to beginning
       fs.writeFileSync(localLeadsPath, JSON.stringify(leads, null, 2));
@@ -41,14 +65,11 @@ export class SheetsService {
 
       // 2. Try to sync with Google Sheets if credentials are provided
       const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-      const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      const authConfig = this.getGoogleAuthConfig();
 
-      if (spreadsheetId && credentialsPath && fs.existsSync(credentialsPath)) {
+      if (spreadsheetId && authConfig) {
         console.log('Syncing lead with Google Sheets API...');
-        const auth = new google.auth.GoogleAuth({
-          keyFile: credentialsPath,
-          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
+        const auth = new google.auth.GoogleAuth(authConfig);
 
         const sheets = google.sheets({ version: 'v4', auth });
         const values = [
@@ -69,22 +90,27 @@ export class SheetsService {
           ]
         ];
 
-        await sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range: 'Sheet1!A:M',
-          valueInputOption: 'USER_ENTERED',
-          requestBody: { values },
-        });
-        console.log('Lead successfully written to Google Sheets!');
+        try {
+          await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: 'Sheet1!A:M',
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values },
+          });
+          console.log('Lead successfully written to Google Sheets!');
+        } catch (sheetErr) {
+          console.warn('Failed to write to Google Sheets:', sheetErr.message);
+        }
       } else {
         console.log('Google Sheets API is unconfigured. Lead saved locally only.');
       }
 
-      return newLead;
     } catch (err) {
-      console.error('Error logging lead:', err);
+      console.error('Error logging lead locally:', err.message || err);
       // Don't crash the workflow if logging fails
     }
+
+    return newLead;
   }
 
   static async getLeads() {

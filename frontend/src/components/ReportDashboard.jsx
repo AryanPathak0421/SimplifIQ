@@ -113,7 +113,7 @@ export default function ReportDashboard({ reportData, onRestart }) {
       )}
 
       {/* 2. Overview Summary and Scorecards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px' }}>
+      <div className="grid-2-wide">
         
         {/* Left Side: Summary Card */}
         <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -141,7 +141,7 @@ export default function ReportDashboard({ reportData, onRestart }) {
         </div>
 
         {/* Right Side: Score Card Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="grid-2">
           
           {/* SEO Metric */}
           <div className="glass-card" style={{ textAlign: 'center', padding: '24px 16px', borderTop: `4px solid ${getScoreColor(scraped.scores.seo)}` }}>
@@ -187,7 +187,7 @@ export default function ReportDashboard({ reportData, onRestart }) {
           <div style={{ width: '40px', height: '3px', background: 'hsl(var(--primary))', marginTop: '6px' }}></div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="grid-2">
           
           {/* Strengths Box */}
           <div style={{

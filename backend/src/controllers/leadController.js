@@ -88,6 +88,7 @@ export class LeadController {
         success: true,
         message: 'Lead workflow processed successfully',
         leadId: savedLead?.id || 'LID_UNKNOWN',
+        emailSent: !!emailResult?.success,
         pdfUrl,
         emailPreviewUrl: emailResult.etherealUrl,
         scraped: {

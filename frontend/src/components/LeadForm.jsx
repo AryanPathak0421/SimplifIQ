@@ -86,7 +86,7 @@ export default function LeadForm({ onSubmit }) {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="grid-2">
           <div className="form-group">
             <label className="form-label">FULL NAME</label>
             <input
@@ -116,7 +116,7 @@ export default function LeadForm({ onSubmit }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="grid-2">
           <div className="form-group">
             <label className="form-label">COMPANY NAME</label>
             <input

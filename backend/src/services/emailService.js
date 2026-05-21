@@ -111,8 +111,34 @@ export class EmailService {
       ]
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`Email successfully processed! Message ID: ${info.messageId}`);
+    // Attempt to send email with retries and exponential backoff for transient errors
+    let info = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+    let lastError = null;
+
+    while (attempts < maxAttempts) {
+      try {
+        attempts += 1;
+        info = await transporter.sendMail(mailOptions);
+        console.log(`Email processed (attempt ${attempts}). Message ID: ${info.messageId}`);
+        break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`sendMail attempt ${attempts} failed: ${err.message}`);
+        if (attempts < maxAttempts) {
+          // exponential backoff: 500ms, 1000ms, ...
+          await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempts - 1)));
+        }
+      }
+    }
+
+    if (!info) {
+      console.error('All attempts to send email failed:', lastError?.message || 'unknown');
+      return { success: false, messageId: null, etherealUrl: null, error: lastError?.message };
+    }
+
+    const rejected = Array.isArray(info.rejected) && info.rejected.length > 0;
 
     if (!isSmtpConfigured) {
       etherealUrl = nodemailer.getTestMessageUrl(info);
@@ -120,7 +146,7 @@ export class EmailService {
     }
 
     return {
-      success: true,
+      success: !rejected,
       messageId: info.messageId,
       etherealUrl
     };

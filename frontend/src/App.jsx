@@ -100,7 +100,7 @@ export default function App() {
         {view === 'form' && (
           <div className="fade-in">
             <div style={{ textAlign: 'center', margin: '20px auto 40px auto', maxWidth: '800px' }}>
-              <h1 style={{ fontSize: '3rem', fontWeight: '800', lineHeight: '1.1' }}>
+              <h1 className="hero-title">
                 Automate Prospect <span className="text-gradient">Enrichment & Audits</span>
               </h1>
               <p style={{ color: 'hsl(var(--text-secondary))', fontSize: '1.2rem', marginTop: '16px', lineHeight: '1.6' }}>

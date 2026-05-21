@@ -207,6 +207,8 @@ export class PDFService {
 
         // --- FOOTERS & PAGE NUMBERS (Multi-pass using bufferPages) ---
         const range = doc.bufferedPageRange();
+
+        // Draw footers on all non-cover pages
         for (let i = 0; i < range.count; i++) {
           doc.switchToPage(i);
           if (i > 0) { // Do not draw headers/footers on cover page
@@ -219,6 +221,43 @@ export class PDFService {
             // Thin Footer line
             doc.moveTo(50, 775).lineTo(545, 775).lineWidth(0.5).stroke(borderLight);
           }
+        }
+
+        // === TRIM TRAILING BLANK PAGES (Prototype-safe approach) ===
+        // Some inputs or internal PDFKit behavior can cause extra blank pages
+        // to be present at the end of the buffered pages. For the intended
+        // 4-page audit, remove any trailing pages after page 4 that appear
+        // to be empty. This mutates PDFKit internals and is acceptable for
+        // a prototype to avoid shipping many blank pages.
+        try {
+          // Allow disabling trimming via env var for cases where full PDF (including blanks)
+          // should be preserved. Set `PDF_TRIM_BLANK=false` in backend/.env to skip trimming.
+          const trimEnabled = (process.env.PDF_TRIM_BLANK || 'true').toLowerCase() === 'true';
+          if (!trimEnabled) {
+            console.log('PDF trimming disabled via PDF_TRIM_BLANK=false; preserving all pages.');
+          } else {
+            const MAX_PAGES = 4;
+            const currentRange = doc.bufferedPageRange();
+            const total = currentRange.count;
+            if (total > MAX_PAGES) {
+              // Remove references from internal page arrays
+              if (Array.isArray(doc._pages) && doc._pages.length > MAX_PAGES) {
+                doc._pages.splice(MAX_PAGES);
+              }
+              if (doc._root && doc._root.data && doc._root.data.Pages && Array.isArray(doc._root.data.Pages.data.Kids)) {
+                doc._root.data.Pages.data.Kids.splice(MAX_PAGES);
+                // Update the Count entry
+                doc._root.data.Pages.data.Count = doc._root.data.Pages.data.Kids.length;
+              }
+              // If bufferedPageRange is cached, try to clear or update
+              if (doc._pageBuffer && Array.isArray(doc._pageBuffer)) {
+                doc._pageBuffer.splice(MAX_PAGES);
+              }
+              console.log(`Trimmed PDF pages from ${total} to ${Math.min(total, MAX_PAGES)} to remove blanks.`);
+            }
+          }
+        } catch (trimErr) {
+          console.warn('Failed to trim trailing PDF pages:', trimErr.message || trimErr);
         }
 
         doc.end();

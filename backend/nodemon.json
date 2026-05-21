@@ -1,0 +1,13 @@
+{
+  "watch": ["server.js", "src/**/*.js"],
+  "ext": "js,mjs,cjs,json",
+  "ignore": [
+    "storage/**",
+    "reports/**",
+    "**/storage/**",
+    "**/reports/**",
+    ".env",
+    "credentials.json"
+  ],
+  "delay": "500"
+}

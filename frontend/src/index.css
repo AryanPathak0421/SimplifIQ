@@ -251,6 +251,57 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
 }
 
+/* Responsive header actions */
+.nav-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.nav-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: hsl(var(--text-primary));
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .navbar-content {
+    padding: 0 12px;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-actions {
+    display: none;
+    width: 100%;
+    margin-top: 8px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav-actions.open {
+    display: flex;
+  }
+
+  .btn-outline {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+}
+
 .logo {
   font-family: var(--font-header);
   font-size: 1.4rem;
@@ -287,6 +338,74 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition-smooth);
+}
+
+/* --- RESPONSIVE GRID UTILITIES --- */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.grid-2-wide {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 30px;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* --- RESPONSIVE BREAKPOINTS --- */
+@media (max-width: 900px) {
+  .main-content {
+    padding: 28px 16px;
+  }
+
+  .orb-1, .orb-2 {
+    width: 60vw;
+    height: 60vw;
+    filter: blur(100px);
+    opacity: 0.35;
+  }
+
+  .navbar-content {
+    padding: 0 12px;
+  }
+
+  .glass-card {
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .btn-primary {
+    padding: 12px 18px;
+  }
+
+  .logo {
+    font-size: 1.1rem;
+  }
+
+  .grid-2, .grid-2-wide {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-title {
+    font-size: 1.8rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 20px 12px;
+  }
+
+  .ambient-glow-wrapper { display: none; }
+
+  .btn-primary { padding: 10px 14px; font-size: 0.95rem; }
 }
 
 .chip:hover {

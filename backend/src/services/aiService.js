@@ -13,7 +13,8 @@ export class AIService {
       try {
         console.log('Generating AI analysis via Gemini API...');
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // Use a currently supported Gemini model. Updated from deprecated/removed model name.
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         const prompt = `
           You are an expert Digital Strategy Consultant & Growth Marketer.
@@ -71,21 +72,66 @@ export class AIService {
           }
         `;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        
-        // Sanitize the response text to extract valid JSON
-        let cleanText = text.trim();
-        if (cleanText.startsWith('```json')) {
-          cleanText = cleanText.substring(7);
-        }
-        if (cleanText.endsWith('```')) {
-          cleanText = cleanText.substring(0, cleanText.length - 3);
-        }
-        cleanText = cleanText.trim();
+        // Attempt with retries and exponential backoff (respect RetryInfo if present)
+        let attempts = 0;
+        const maxAttempts = 3;
+        let lastError = null;
 
-        const jsonResult = JSON.parse(cleanText);
-        return jsonResult;
+        while (attempts < maxAttempts) {
+          try {
+            attempts += 1;
+            console.log(`Gemini: generateContent attempt ${attempts}/${maxAttempts}`);
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
+
+            // Sanitize the response text to extract valid JSON
+            let cleanText = text.trim();
+            if (cleanText.startsWith('```json')) {
+              cleanText = cleanText.substring(7);
+            }
+            if (cleanText.endsWith('```')) {
+              cleanText = cleanText.substring(0, cleanText.length - 3);
+            }
+            cleanText = cleanText.trim();
+
+            const jsonResult = JSON.parse(cleanText);
+            return jsonResult;
+          } catch (err) {
+            lastError = err;
+            console.warn(`Gemini generateContent failed on attempt ${attempts}: ${err.message}`);
+
+            // Try to honour RetryInfo.retryDelay if provided by the API error details
+            let waitMs = 500 * Math.pow(2, attempts - 1);
+            try {
+              const details = err.errorDetails || err.response?.data?.error?.details || [];
+              const retryInfo = Array.isArray(details) && details.find(d => d && d.retryDelay);
+              if (retryInfo && retryInfo.retryDelay) {
+                // retryDelay is ISO duration like '15s'
+                const s = String(retryInfo.retryDelay).trim();
+                const secondsMatch = s.match(/(\d+(?:\.\d+)?)s/);
+                if (secondsMatch) waitMs = Math.ceil(parseFloat(secondsMatch[1]) * 1000);
+                // If the API suggests a long retry delay, prefer falling back immediately
+                const suggestedSeconds = secondsMatch ? parseFloat(secondsMatch[1]) : null;
+                const FALLBACK_THRESHOLD_SEC = 20; // if remote asks to wait longer than this, skip waiting
+                if (suggestedSeconds && suggestedSeconds > FALLBACK_THRESHOLD_SEC) {
+                  console.warn(`Gemini suggests retryDelay ${suggestedSeconds}s which exceeds threshold ${FALLBACK_THRESHOLD_SEC}s — falling back to heuristic.`);
+                  // break out of retry loop by setting attempts to maxAttempts
+                  attempts = maxAttempts;
+                  break;
+                }
+              }
+            } catch (parseErr) {
+              // ignore parse errors and use exponential backoff
+            }
+
+            if (attempts < maxAttempts) {
+              console.log(`Waiting ${waitMs}ms before retrying Gemini...`);
+              await new Promise(r => setTimeout(r, waitMs));
+            }
+          }
+        }
+
+        console.error('Gemini API exhausted retries, falling back to heuristic engine.', lastError?.message || lastError);
 
       } catch (err) {
         console.error('Gemini API call failed, falling back to expert rule-based engine:', err);

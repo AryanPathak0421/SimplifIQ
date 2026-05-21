@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Header({ currentView, onViewChange }) {
+  const [open, setOpen] = useState(false);
+
+  const handleNavClick = (view) => {
+    onViewChange(view);
+    setOpen(false);
+  };
   return (
     <nav className="navbar">
       <div className="navbar-content">
@@ -10,12 +16,16 @@ export default function Header({ currentView, onViewChange }) {
           <span style={{ fontSize: '0.8rem', color: 'hsl(var(--primary))', fontWeight: 'bold', alignSelf: 'flex-start', marginTop: '2px' }}>AI</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <button 
+        <button className="nav-toggle" onClick={() => setOpen(prev => !prev)} aria-expanded={open} aria-label="Toggle navigation">
+          ☰
+        </button>
+
+        <div className={`nav-actions ${open ? 'open' : ''}`}>
+          <button
             className={`btn-outline ${currentView === 'form' || currentView === 'results' ? 'active' : ''}`}
-            onClick={() => onViewChange('form')}
-            style={{ 
-              border: 'none', 
+            onClick={() => handleNavClick('form')}
+            style={{
+              border: 'none',
               color: currentView === 'form' || currentView === 'results' ? '#ffffff' : 'hsl(var(--text-secondary))',
               background: currentView === 'form' || currentView === 'results' ? 'var(--primary-glow)' : 'transparent',
               padding: '8px 16px',
@@ -24,12 +34,12 @@ export default function Header({ currentView, onViewChange }) {
           >
             Client Audit Portal
           </button>
-          
-          <button 
+
+          <button
             className={`btn-outline ${currentView === 'admin' ? 'active' : ''}`}
-            onClick={() => onViewChange('admin')}
-            style={{ 
-              border: 'none', 
+            onClick={() => handleNavClick('admin')}
+            style={{
+              border: 'none',
               color: currentView === 'admin' ? '#ffffff' : 'hsl(var(--text-secondary))',
               background: currentView === 'admin' ? 'var(--primary-glow)' : 'transparent',
               padding: '8px 16px',
